@@ -1,16 +1,7 @@
 const dotenv = require("dotenv");
 const express = require("express");
 const mongoose = require("mongoose");
-const User = require("./model/user");
-const {
-  createUser,
-  getUsers,
-  getUserById,
-  updateUser,
-  deleteUser,
-} = require("./controllers/userAccountController");
 const accountManagementRoutes = require("./routes/accountManagementRoutes");
-
 const app = express();
 const PORT = process.env.PORT || 3000;
 dotenv.config();
