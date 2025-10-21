@@ -9,6 +9,7 @@ const PORT = process.env.PORT || 3000;
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/supper-app', {
+
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
@@ -39,7 +40,7 @@ app.get('/old-users', async (req, res) => {
   }
 });
 
-// Start ser
+// Start server
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
