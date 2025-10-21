@@ -39,7 +39,7 @@ app.get('/old-users', async (req, res) => {
   }
 });
 
-// Start server
+// Start ser
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
