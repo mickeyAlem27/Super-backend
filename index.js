@@ -1,6 +1,8 @@
 const dotenv = require("dotenv");
 const express = require("express");
 const mongoose = require("mongoose");
+const swaggerUi = require('swagger-ui-express');
+const specs = require('./swagger-api/swaggerOptions');
 const accountManagementRoutes = require("./routes/accountManagementRoutes");
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -24,7 +26,11 @@ app.get("/", (req, res) => {
 // Account management routes
 app.use("/account", accountManagementRoutes);
 
+// Swagger UI setup
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
+
 // Start server
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
+  console.log(`Swagger docs available at http://localhost:${PORT}/api-docs`);
 });
