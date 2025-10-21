@@ -1,9 +1,9 @@
 const User = require("../model/user");
 const bcrypt = require("bcryptjs");
-const jwt = require('jsonwebtoken');
+const jwt = require("jsonwebtoken");
 
 // Secret key for JWT token (should be in environment variables)
-const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key';
+const JWT_SECRET = process.env.JWT_SECRET || "your-super-secret-jwt-key";
 
 // Create a new user (Register)
 const createUser = async (req, res) => {
@@ -13,11 +13,9 @@ const createUser = async (req, res) => {
     // Check if user already exists
     const existingUser = await User.findOne({ $or: [{ email }, { phoneNo }] });
     if (existingUser) {
-      return res
-        .status(400)
-        .json({
-          message: "User with this email or phone number already exists",
-        });
+      return res.status(400).json({
+        message: "User with this email or phone number already exists",
+      });
     }
 
     const user = new User({
@@ -123,44 +121,46 @@ const loginUser = async (req, res) => {
     // Find user by email
     const user = await User.findOne({ email, isDeleted: false });
     if (!user) {
-      return res.status(400).json({ message: 'Invalid email or password' });
+      return res.status(400).json({ message: "Invalid email or password" });
     }
 
     // Check password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(400).json({ message: 'Invalid email or password' });
+      return res.status(400).json({ message: "Invalid email or password" });
     }
 
     // Generate JWT token
     const token = jwt.sign(
       { userId: user._id, email: user.email },
       JWT_SECRET,
-      { expiresIn: '24h' } // Token expires in 24 hours
+      { expiresIn: "24h" }, // Token expires in 24 hours
     );
 
     // Return user info and token (excluding password)
     const { password: userPassword, ...userInfo } = user.toObject();
     res.status(200).json({
-      message: 'Login successful',
+      message: "Login successful",
       token,
-      user: userInfo
+      user: userInfo,
     });
   } catch (error) {
-    res.status(500).json({ message: 'Error logging in', error: error.message });
+    res.status(500).json({ message: "Error logging in", error: error.message });
   }
 };
 
 // Get current user profile (requires authentication)
 const getCurrentUserProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.userId).select('-password');
+    const user = await User.findById(req.userId).select("-password");
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
     res.status(200).json(user);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching user profile', error: error.message });
+    res
+      .status(500)
+      .json({ message: "Error fetching user profile", error: error.message });
   }
 };
 
@@ -168,24 +168,25 @@ const getCurrentUserProfile = async (req, res) => {
 const updateCurrentUserProfile = async (req, res) => {
   try {
     const updates = req.body;
-    
+
     // Remove sensitive fields that shouldn't be updated directly
     delete updates.password;
     delete updates.email; // Email update may require additional verification
-    
-    const user = await User.findByIdAndUpdate(
-      req.userId,
-      updates,
-      { new: true, runValidators: true }
-    ).select('-password');
-    
+
+    const user = await User.findByIdAndUpdate(req.userId, updates, {
+      new: true,
+      runValidators: true,
+    }).select("-password");
+
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
-    
-    res.status(200).json({ message: 'Profile updated successfully', user });
+
+    res.status(200).json({ message: "Profile updated successfully", user });
   } catch (error) {
-    res.status(500).json({ message: 'Error updating profile', error: error.message });
+    res
+      .status(500)
+      .json({ message: "Error updating profile", error: error.message });
   }
 };
 
@@ -198,13 +199,13 @@ const changePassword = async (req, res) => {
     // Find user by ID
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
     // Verify current password
     const isMatch = await bcrypt.compare(currentPassword, user.password);
     if (!isMatch) {
-      return res.status(400).json({ message: 'Current password is incorrect' });
+      return res.status(400).json({ message: "Current password is incorrect" });
     }
 
     // Hash new password
@@ -214,9 +215,11 @@ const changePassword = async (req, res) => {
     // Update password
     await User.findByIdAndUpdate(userId, { password: hashedNewPassword });
 
-    res.status(200).json({ message: 'Password changed successfully' });
+    res.status(200).json({ message: "Password changed successfully" });
   } catch (error) {
-    res.status(500).json({ message: 'Error changing password', error: error.message });
+    res
+      .status(500)
+      .json({ message: "Error changing password", error: error.message });
   }
 };
 
@@ -228,7 +231,9 @@ const forgotPassword = async (req, res) => {
     // Find user by email
     const user = await User.findOne({ email, isDeleted: false });
     if (!user) {
-      return res.status(404).json({ message: 'User with this email does not exist' });
+      return res
+        .status(404)
+        .json({ message: "User with this email does not exist" });
     }
 
     // In a real application, you would generate a reset token and send it via email
@@ -236,9 +241,97 @@ const forgotPassword = async (req, res) => {
     // const resetToken = generateResetToken(); // Implementation needed
     // await sendPasswordResetEmail(user.email, resetToken); // Implementation needed
 
-    res.status(200).json({ message: 'Password reset instructions sent to your email' });
+    res
+      .status(200)
+      .json({ message: "Password reset instructions sent to your email" });
   } catch (error) {
-    res.status(500).json({ message: 'Error processing password reset request', error: error.message });
+    res.status(500).json({
+      message: "Error processing password reset request",
+      error: error.message,
+    });
+  }
+};
+
+// Create account (register) - for account creation through account management
+const createAccount = async (req, res) => {
+  try {
+    const { firstName, lastName, phoneNo, email, password } = req.body;
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ $or: [{ email }, { phoneNo }] });
+    if (existingUser) {
+      return res.status(400).json({
+        message: "User with this email or phone number already exists",
+      });
+    }
+
+    const user = new User({
+      firstName,
+      lastName,
+      phoneNo,
+      email,
+      password,
+    });
+
+    const savedUser = await user.save();
+    res
+      .status(201)
+      .json({ message: "Account created successfully", user: savedUser });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error creating account", error: error.message });
+  }
+};
+
+// Delete account (permanently delete the current user's account)
+const deleteAccount = async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    // Find and delete the user
+    const user = await User.findByIdAndDelete(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({ message: "Account deleted successfully" });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error deleting account", error: error.message });
+  }
+};
+
+// Hard delete an account by ID and set first/last name to "Deleted Account"
+const hardDeleteAccount = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Find the user by ID
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Update the user's first and last name to "Deleted Account"
+    const updatedUser = await User.findByIdAndUpdate(
+      id,
+      {
+        firstName: "Deleted Account",
+        lastName: "Deleted Account",
+        isDeleted: true, // Soft delete flag as well
+      },
+      { new: true },
+    );
+
+    res
+      .status(200)
+      .json({ message: "Account deleted successfully", user: updatedUser });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error deleting account", error: error.message });
   }
 };
 
@@ -246,21 +339,21 @@ const forgotPassword = async (req, res) => {
 const logoutUser = (req, res) => {
   // In a real implementation, you might want to add the token to a blacklist
   // For now, we just send a success response to let the client know to clear the token
-  res.status(200).json({ message: 'Logout successful' });
+  res.status(200).json({ message: "Logout successful" });
 };
 
 // Middleware to authenticate user using JWT token
 const authenticateToken = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1]; // Bearer TOKEN
 
   if (!token) {
-    return res.status(401).json({ message: 'Access token required' });
+    return res.status(401).json({ message: "Access token required" });
   }
 
   jwt.verify(token, JWT_SECRET, (err, user) => {
     if (err) {
-      return res.status(403).json({ message: 'Invalid or expired token' });
+      return res.status(403).json({ message: "Invalid or expired token" });
     }
     req.userId = user.userId; // Attach user ID to request object
     next();
@@ -280,4 +373,7 @@ module.exports = {
   forgotPassword,
   logoutUser,
   authenticateToken,
+  createAccount,
+  deleteAccount,
+  hardDeleteAccount,
 };
